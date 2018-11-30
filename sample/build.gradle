@@ -20,7 +20,17 @@ android {
         targetSdkVersion 26
         versionCode 3
         versionName "3.0.0"
-    }
+
+
+//        javaCompileOptions{
+//            annotationProcessorOptions {
+//                arguments = [
+//                        "androidManifestFile": "../sample/src/main/AndroidManifest.xml"
+//                ]
+//            }
+//        }
+
+}
 
 }
 
