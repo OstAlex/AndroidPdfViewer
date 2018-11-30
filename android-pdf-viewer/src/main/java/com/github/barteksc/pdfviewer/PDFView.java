@@ -282,13 +282,16 @@ public class PDFView extends RelativeLayout {
      *
      * @param page Page index.
      */
-    public void jumpTo(int page, boolean withAnimation) {
+    public void jumpTo(int page, boolean withAnimation, boolean isCenter) {
         if (pdfFile == null) {
             return;
         }
 
         page = pdfFile.determineValidPageNumberFrom(page);
         float offset = page == 0 ? 0 : -pdfFile.getPageOffset(page, zoom);
+        if (isCenter) {
+            offset += (swipeVertical ? getHeight() : getWidth() - pdfFile.getPageLength(page, zoom)) / 2;
+        }
         if (swipeVertical) {
             if (withAnimation) {
                 animationManager.startYAnimation(currentYOffset, offset);
@@ -305,8 +308,12 @@ public class PDFView extends RelativeLayout {
         showPage(page);
     }
 
+    public void jumpTo(int page, boolean withAnimation) {
+        jumpTo(page, withAnimation, false);
+    }
+
     public void jumpTo(int page) {
-        jumpTo(page, false);
+        jumpTo(page, false, false);
     }
 
     void showPage(int pageNb) {

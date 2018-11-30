@@ -21,12 +21,15 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.github.barteksc.pdfviewer.PDFView;
@@ -63,6 +66,12 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
     @ViewById
     PDFView pdfView;
 
+    @ViewById
+    View rightView;
+
+    @ViewById
+    View leftView;
+
     @NonConfigurationInstance
     Uri uri;
 
@@ -70,6 +79,8 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
     Integer pageNumber = 0;
 
     String pdfFileName;
+
+    boolean swipeHorizontal = false;
 
     @OptionsItem(R.id.pickFile)
     void pickFile() {
@@ -100,6 +111,32 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
         }
     }
 
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+//        leftView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                int currentPage = pdfView.getCurrentPage();
+//                if (currentPage>1){
+//                    pdfView.jumpTo(currentPage - 1, true,true);
+//                }
+//            }
+//        });
+//        rightView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                int currentPage = pdfView.getCurrentPage();
+//                int pageCount = pdfView.getPageCount();
+//                if (currentPage < pageCount){
+//                    pdfView.jumpTo(currentPage + 1,true,true);
+//                }
+//
+//            }
+//        });
+    }
+
     @AfterViews
     void afterViews() {
         pdfView.setBackgroundColor(Color.LTGRAY);
@@ -122,6 +159,7 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
                 .scrollHandle(new DefaultScrollHandle(this))
                 .spacing(10) // in dp
                 .onPageError(this)
+                .swipeHorizontal(swipeHorizontal)
                 .pageFitPolicy(FitPolicy.BOTH)
                 .load();
     }
@@ -136,6 +174,8 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
                 .onLoad(this)
                 .scrollHandle(new DefaultScrollHandle(this))
                 .spacing(10) // in dp
+                .swipeHorizontal(swipeHorizontal)
+                .pageFitPolicy(FitPolicy.BOTH)
                 .onPageError(this)
                 .load();
     }

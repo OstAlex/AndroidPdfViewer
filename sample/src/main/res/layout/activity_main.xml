@@ -7,5 +7,14 @@
         android:id="@+id/pdfView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+	<View
+		android:id="@+id/leftView"
+		android:layout_width="150dp"
+		android:layout_height="match_parent"/>
+	<View
+		android:id="@+id/rightView"
+		android:layout_alignParentRight="true"
+		android:layout_width="150dp"
+		android:layout_height="match_parent"/>
 
 </RelativeLayout>
