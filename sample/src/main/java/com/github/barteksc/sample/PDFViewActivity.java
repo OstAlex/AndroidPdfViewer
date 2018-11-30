@@ -21,10 +21,8 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -80,7 +78,8 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
 
     String pdfFileName;
 
-    boolean swipeHorizontal = false;
+    boolean swipeHorizontal = true;
+    private FitPolicy fitPolicy = FitPolicy.PAGE_FIT_BOTH;
 
     @OptionsItem(R.id.pickFile)
     void pickFile() {
@@ -160,7 +159,7 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
                 .spacing(10) // in dp
                 .onPageError(this)
                 .swipeHorizontal(swipeHorizontal)
-                .pageFitPolicy(FitPolicy.BOTH)
+                .pageFitPolicy(fitPolicy)
                 .load();
     }
 
@@ -175,7 +174,7 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
                 .scrollHandle(new DefaultScrollHandle(this))
                 .spacing(10) // in dp
                 .swipeHorizontal(swipeHorizontal)
-                .pageFitPolicy(FitPolicy.BOTH)
+                .pageFitPolicy(fitPolicy)
                 .onPageError(this)
                 .load();
     }
