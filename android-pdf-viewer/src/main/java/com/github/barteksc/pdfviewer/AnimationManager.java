@@ -21,6 +21,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.graphics.PointF;
+import android.util.Log;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.OverScroller;
 
@@ -32,6 +33,7 @@ import android.widget.OverScroller;
  * of each animation update.
  */
 class AnimationManager {
+    private static final String TAG = "zuo_AnimationManager";
 
     private PDFView pdfView;
 
@@ -41,7 +43,10 @@ class AnimationManager {
 
     private boolean flinging = false;
 
+    private final int DURATION = 200;
+
     private boolean pageFlinging = false;
+    private FlingChangeCallback flingChangeCallback;
 
     public AnimationManager(PDFView pdfView) {
         this.pdfView = pdfView;
@@ -49,54 +54,69 @@ class AnimationManager {
     }
 
     public void startXAnimation(float xFrom, float xTo) {
+        Log.d(TAG, "startXAnimation() called with: xFrom = [" + xFrom + "], xTo = [" + xTo + "]");
         stopAll();
         animation = ValueAnimator.ofFloat(xFrom, xTo);
         XAnimation xAnimation = new XAnimation();
         animation.setInterpolator(new DecelerateInterpolator());
         animation.addUpdateListener(xAnimation);
         animation.addListener(xAnimation);
-        animation.setDuration(400);
+        animation.setDuration(DURATION);
         animation.start();
     }
 
     public void startYAnimation(float yFrom, float yTo) {
+        Log.d(TAG, "startYAnimation() called with: yFrom = [" + yFrom + "], yTo = [" + yTo + "]");
         stopAll();
         animation = ValueAnimator.ofFloat(yFrom, yTo);
         YAnimation yAnimation = new YAnimation();
         animation.setInterpolator(new DecelerateInterpolator());
         animation.addUpdateListener(yAnimation);
         animation.addListener(yAnimation);
-        animation.setDuration(400);
+        animation.setDuration(DURATION);
         animation.start();
     }
 
     public void startZoomAnimation(float centerX, float centerY, float zoomFrom, float zoomTo) {
+        Log.d(TAG, "startZoomAnimation() called with: centerX = [" + centerX + "], centerY = [" + centerY + "], zoomFrom = [" + zoomFrom + "], zoomTo = [" + zoomTo + "]");
         stopAll();
         animation = ValueAnimator.ofFloat(zoomFrom, zoomTo);
         animation.setInterpolator(new DecelerateInterpolator());
         ZoomAnimation zoomAnim = new ZoomAnimation(centerX, centerY);
         animation.addUpdateListener(zoomAnim);
         animation.addListener(zoomAnim);
-        animation.setDuration(400);
+        animation.setDuration(DURATION);
         animation.start();
     }
 
     public void startFlingAnimation(int startX, int startY, int velocityX, int velocityY, int minX, int maxX, int minY, int maxY) {
+        if (!pdfView.isSwipeVertical() && pdfView.getZoom() == 1) {
+            return;
+        }
+        Log.d(TAG, "startFlingAnimation() called with: startX = [" + startX + "], startY = [" + startY + "], velocityX = [" + velocityX + "], velocityY = [" + velocityY + "], minX = [" + minX + "], maxX = [" + maxX + "], minY = [" + minY + "], maxY = [" + maxY + "]");
         stopAll();
         flinging = true;
         scroller.fling(startX, startY, velocityX, velocityY, minX, maxX, minY, maxY);
+        if (flingChangeCallback != null) {
+            flingChangeCallback.onFlingChanged(true);
+        }
     }
 
     public void startPageFlingAnimation(float targetOffset) {
+        Log.d(TAG, "startPageFlingAnimation() called with: targetOffset = [" + targetOffset + "]");
         if (pdfView.isSwipeVertical()) {
             startYAnimation(pdfView.getCurrentYOffset(), targetOffset);
         } else {
             startXAnimation(pdfView.getCurrentXOffset(), targetOffset);
         }
         pageFlinging = true;
+        if (flingChangeCallback != null) {
+            flingChangeCallback.onFlingChanged(true);
+        }
     }
 
     void computeFling() {
+        Log.d(TAG, "computeFling() called  flinging:" + flinging);
         if (scroller.computeScrollOffset()) {
             pdfView.moveTo(scroller.getCurrX(), scroller.getCurrY());
             pdfView.loadPageByOffset();
@@ -105,10 +125,14 @@ class AnimationManager {
             pdfView.loadPages();
             hideHandle();
             pdfView.performPageSnap();
+            if (flingChangeCallback != null) {
+                flingChangeCallback.onFlingChanged(false);
+            }
         }
     }
 
     public void stopAll() {
+        Log.d(TAG, "stopAll() called");
         if (animation != null) {
             animation.cancel();
             animation = null;
@@ -117,8 +141,13 @@ class AnimationManager {
     }
 
     public void stopFling() {
+        Log.d(TAG, "stopFling() called");
         flinging = false;
         scroller.forceFinished(true);
+    }
+
+    public void setFlingChangeCallback(FlingChangeCallback callback) {
+        flingChangeCallback = callback;
     }
 
     public boolean isFlinging() {
@@ -167,6 +196,10 @@ class AnimationManager {
             pdfView.loadPages();
             pageFlinging = false;
         }
+    }
+
+    interface FlingChangeCallback {
+        void onFlingChanged(boolean isFling);
     }
 
     class ZoomAnimation implements AnimatorUpdateListener, AnimatorListener {

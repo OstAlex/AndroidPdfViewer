@@ -65,9 +65,6 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
     PDFView pdfView;
 
     @ViewById
-    View rightView;
-
-    @ViewById
     View leftView;
 
     @NonConfigurationInstance
@@ -114,6 +111,30 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
     @Override
     protected void onStart() {
         super.onStart();
+        leftView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int currentPage = pdfView.getCurrentPage();
+                PDFView.Configurator configurator = null;
+                if (uri!=null){
+                    configurator = pdfView.fromUri(uri);
+                }else {
+                    configurator = pdfView.fromAsset(SAMPLE_FILE);
+                }
+                configurator
+                        .defaultPage(pageNumber)
+                        .onPageChange(PDFViewActivity.this)
+                        .enableAnnotationRendering(true)
+                        .onLoad(PDFViewActivity.this)
+                        .scrollHandle(new DefaultScrollHandle(PDFViewActivity.this))
+                        .spacing(10) // in dp
+                        .onPageError(PDFViewActivity.this)
+                        .swipeHorizontal(swipeHorizontal = !swipeHorizontal)
+                        .defaultPage(currentPage)
+                        .pageFitPolicy(fitPolicy)
+                        .load();
+            }
+        });
 //        leftView.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View v) {

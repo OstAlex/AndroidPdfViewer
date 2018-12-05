@@ -113,18 +113,26 @@ public class PDFView extends RelativeLayout {
 
     private ScrollDir scrollDir = ScrollDir.NONE;
 
-    /** Rendered parts go to the cache manager */
+    /**
+     * Rendered parts go to the cache manager
+     */
     CacheManager cacheManager;
 
-    /** Animation manager manage all offset and zoom animation */
+    /**
+     * Animation manager manage all offset and zoom animation
+     */
     private AnimationManager animationManager;
 
-    /** Drag manager manage all touch events */
+    /**
+     * Drag manager manage all touch events
+     */
     private DragPinchManager dragPinchManager;
 
     PdfFile pdfFile;
 
-    /** The index of the current sequence */
+    /**
+     * The index of the current sequence
+     */
     private int currentPage;
 
     /**
@@ -141,39 +149,59 @@ public class PDFView extends RelativeLayout {
      */
     private float currentYOffset = 0;
 
-    /** The zoom level, always >= 1 */
+    /**
+     * The zoom level, always >= 1
+     */
     private float zoom = 1f;
 
-    /** True if the PDFView has been recycled */
+    /**
+     * True if the PDFView has been recycled
+     */
     private boolean recycled = true;
 
-    /** Current state of the view */
+    /**
+     * Current state of the view
+     */
     private State state = State.DEFAULT;
 
-    /** Async task used during the loading phase to decode a PDF document */
+    /**
+     * Async task used during the loading phase to decode a PDF document
+     */
     private DecodingAsyncTask decodingAsyncTask;
 
-    /** The thread {@link #renderingHandler} will run on */
+    /**
+     * The thread {@link #renderingHandler} will run on
+     */
     private final HandlerThread renderingHandlerThread;
-    /** Handler always waiting in the background and rendering tasks */
+    /**
+     * Handler always waiting in the background and rendering tasks
+     */
     RenderingHandler renderingHandler;
 
     private PagesLoader pagesLoader;
 
     Callbacks callbacks = new Callbacks();
 
-    /** Paint object for drawing */
+    /**
+     * Paint object for drawing
+     */
     private Paint paint;
 
-    /** Paint object for drawing debug stuff */
+    /**
+     * Paint object for drawing debug stuff
+     */
     private Paint debugPaint;
 
-    /** Policy for fitting pages to screen */
+    /**
+     * Policy for fitting pages to screen
+     */
     private FitPolicy pageFitPolicy = FitPolicy.WIDTH;
 
     private int defaultPage = 0;
 
-    /** True if should scroll through pages vertically instead of horizontally */
+    /**
+     * True if should scroll through pages vertically instead of horizontally
+     */
     private boolean swipeVertical = true;
 
     private boolean enableSwipe = true;
@@ -184,7 +212,9 @@ public class PDFView extends RelativeLayout {
 
     private boolean pageSnap = true;
 
-    /** Pdfium core for loading and rendering PDFs */
+    /**
+     * Pdfium core for loading and rendering PDFs
+     */
     private PdfiumCore pdfiumCore;
 
     private ScrollHandle scrollHandle;
@@ -215,30 +245,46 @@ public class PDFView extends RelativeLayout {
      */
     private boolean renderDuringScale = false;
 
-    /** Antialiasing and bitmap filtering */
+    /**
+     * Antialiasing and bitmap filtering
+     */
     private boolean enableAntialiasing = true;
     private PaintFlagsDrawFilter antialiasFilter =
             new PaintFlagsDrawFilter(0, Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
 
-    /** Spacing between pages, in px */
+    /**
+     * Spacing between pages, in px
+     */
     private int spacingPx = 0;
 
-    /** Add dynamic spacing to fit each page separately on the screen. */
+    /**
+     * Add dynamic spacing to fit each page separately on the screen.
+     */
     private boolean autoSpacing = false;
 
-    /** Fling a single page at a time */
+    /**
+     * Fling a single page at a time
+     */
     private boolean pageFling = true;
 
-    /** Pages numbers used when calling onDrawAllListener */
+    /**
+     * Pages numbers used when calling onDrawAllListener
+     */
     private List<Integer> onDrawPagesNums = new ArrayList<>(10);
 
-    /** Holds info whether view has been added to layout and has width and height */
+    /**
+     * Holds info whether view has been added to layout and has width and height
+     */
     private boolean hasSize = false;
 
-    /** Holds last used Configurator that should be loaded when view has size */
+    /**
+     * Holds last used Configurator that should be loaded when view has size
+     */
     private Configurator waitingDocumentConfigurator;
 
-    /** Construct the initial view */
+    /**
+     * Construct the initial view
+     */
     public PDFView(Context context, AttributeSet set) {
         super(context, set);
 
@@ -286,6 +332,7 @@ public class PDFView extends RelativeLayout {
         if (pdfFile == null) {
             return;
         }
+        Log.d(TAG, "jumpTo() called with: page = [" + page + "], withAnimation = [" + withAnimation + "], isCenter = [" + isCenter + "]");
 
         page = pdfFile.determineValidPageNumberFrom(page);
         float offset = page == 0 ? 0 : -pdfFile.getPageOffset(page, zoom);
@@ -456,7 +503,9 @@ public class PDFView extends RelativeLayout {
         return recycled;
     }
 
-    /** Handle fling animation */
+    /**
+     * Handle fling animation
+     */
     @Override
     public void computeScroll() {
         super.computeScroll();
@@ -643,7 +692,9 @@ public class PDFView extends RelativeLayout {
         }
     }
 
-    /** Draw a given PagePart on the canvas */
+    /**
+     * Draw a given PagePart on the canvas
+     */
     private void drawPart(Canvas canvas, PagePart part) {
         // Can seem strange, but avoid lot of calls
         RectF pageRelativeBounds = part.getPageRelativeBounds();
@@ -723,7 +774,9 @@ public class PDFView extends RelativeLayout {
         redraw();
     }
 
-    /** Called when the PDF is loaded */
+    /**
+     * Called when the PDF is loaded
+     */
     void loadComplete(PdfFile pdfFile) {
         state = State.LOADED;
 
@@ -918,6 +971,20 @@ public class PDFView extends RelativeLayout {
             animationManager.startYAnimation(currentYOffset, -offset);
         } else {
             animationManager.startXAnimation(currentXOffset, -offset);
+        }
+    }
+
+    public void toFitPage() {
+        if (!pageFling && !swipeVertical) {
+            int page = getCurrentPage();
+            float currentXOffset = getCurrentXOffset();
+            float pageOffset = pdfFile.getPageOffset(page, getZoom());
+            SizeF pageSize = pdfFile.getPageSize(page);
+            if (currentXOffset > pageOffset + pageSize.getWidth() / 2 && page + 1 < pdfFile.getPagesCount()) {
+                jumpTo(page + 1, true, true);
+            } else {
+                jumpTo(page, true, true);
+            }
         }
     }
 
@@ -1231,7 +1298,9 @@ public class PDFView extends RelativeLayout {
         return renderDuringScale;
     }
 
-    /** Returns null if document is not loaded */
+    /**
+     * Returns null if document is not loaded
+     */
     public PdfDocument.Meta getDocumentMeta() {
         if (pdfFile == null) {
             return null;
@@ -1239,7 +1308,9 @@ public class PDFView extends RelativeLayout {
         return pdfFile.getMetaData();
     }
 
-    /** Will be empty until document is loaded */
+    /**
+     * Will be empty until document is loaded
+     */
     public List<PdfDocument.Bookmark> getTableOfContents() {
         if (pdfFile == null) {
             return Collections.emptyList();
@@ -1247,7 +1318,9 @@ public class PDFView extends RelativeLayout {
         return pdfFile.getBookmarks();
     }
 
-    /** Will be empty until document is loaded */
+    /**
+     * Will be empty until document is loaded
+     */
     public List<PdfDocument.Link> getLinks(int page) {
         if (pdfFile == null) {
             return Collections.emptyList();
@@ -1255,32 +1328,44 @@ public class PDFView extends RelativeLayout {
         return pdfFile.getPageLinks(page);
     }
 
-    /** Use an asset file as the pdf source */
+    /**
+     * Use an asset file as the pdf source
+     */
     public Configurator fromAsset(String assetName) {
         return new Configurator(new AssetSource(assetName));
     }
 
-    /** Use a file as the pdf source */
+    /**
+     * Use a file as the pdf source
+     */
     public Configurator fromFile(File file) {
         return new Configurator(new FileSource(file));
     }
 
-    /** Use URI as the pdf source, for use with content providers */
+    /**
+     * Use URI as the pdf source, for use with content providers
+     */
     public Configurator fromUri(Uri uri) {
         return new Configurator(new UriSource(uri));
     }
 
-    /** Use bytearray as the pdf source, documents is not saved */
+    /**
+     * Use bytearray as the pdf source, documents is not saved
+     */
     public Configurator fromBytes(byte[] bytes) {
         return new Configurator(new ByteArraySource(bytes));
     }
 
-    /** Use stream as the pdf source. Stream will be written to bytearray, because native code does not support Java Streams */
+    /**
+     * Use stream as the pdf source. Stream will be written to bytearray, because native code does not support Java Streams
+     */
     public Configurator fromStream(InputStream stream) {
         return new Configurator(new InputStreamSource(stream));
     }
 
-    /** Use custom source as pdf source */
+    /**
+     * Use custom source as pdf source
+     */
     public Configurator fromSource(DocumentSource docSource) {
         return new Configurator(docSource);
     }

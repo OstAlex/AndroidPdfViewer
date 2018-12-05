@@ -17,6 +17,7 @@ package com.github.barteksc.pdfviewer;
 
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -36,6 +37,8 @@ import static com.github.barteksc.pdfviewer.util.Constants.Pinch.MINIMUM_ZOOM;
  * set its zoom track user actions.
  */
 class DragPinchManager implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener, ScaleGestureDetector.OnScaleGestureListener, View.OnTouchListener {
+    private static final String TAG = "zuo_DragPinchManager";
+    private final float xdpi;
 
     private PDFView pdfView;
     private AnimationManager animationManager;
@@ -46,9 +49,11 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
     private boolean scrolling = false;
     private boolean scaling = false;
     private boolean enabled = false;
+    private int touchDownPage;
 
     DragPinchManager(PDFView pdfView, AnimationManager animationManager) {
         this.pdfView = pdfView;
+        xdpi = pdfView.getContext().getResources().getDisplayMetrics().xdpi;
         this.animationManager = animationManager;
         gestureDetector = new GestureDetector(pdfView.getContext(), this);
         scaleGestureDetector = new ScaleGestureDetector(pdfView.getContext(), this);
@@ -65,8 +70,19 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
 
     @Override
     public boolean onSingleTapConfirmed(MotionEvent e) {
-        boolean onTapHandled = pdfView.callbacks.callOnTap(e);
         boolean linkTapped = checkLinkTapped(e.getX(), e.getY());
+        if (!linkTapped && !pdfView.isSwipeVertical() && pdfView.getZoom() == 1){
+            float x = e.getX();
+            if (x <= xdpi ){
+                pdfView.jumpTo(pdfView.getCurrentPage() - 1 ,true ,true);
+                return true;
+
+            }else if (pdfView.getWidth() - x <= xdpi){
+                pdfView.jumpTo(pdfView.getCurrentPage() + 1,true,true);
+                return true;
+            }
+        }
+        boolean onTapHandled = pdfView.callbacks.callOnTap(e);
         if (!onTapHandled && !linkTapped) {
             ScrollHandle ps = pdfView.getScrollHandle();
             if (ps != null && !pdfView.documentFitsView()) {
@@ -169,6 +185,7 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
 
     @Override
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+        Log.d(TAG, "onScroll() called with: e1 = [" + e1 + "], e2 = [" + e2 + "], distanceX = [" + distanceX + "], distanceY = [" + distanceY + "]");
         scrolling = true;
         if (pdfView.isZooming() || pdfView.isSwipeEnabled()) {
             pdfView.moveRelativeTo(-distanceX, -distanceY);
@@ -179,12 +196,25 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
         return true;
     }
 
+    private boolean handleFit = false;
     private void onScrollEnd(MotionEvent event) {
         pdfView.loadPages();
         hideHandle();
         if (!animationManager.isFlinging()) {
             pdfView.performPageSnap();
         }
+        pdfView.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (pdfView.getZoom() == 1 && !pdfView.isSwipeVertical() && !animationManager.isFlinging() && !scaling) {
+                    if (!handleFit){
+                        Log.d(TAG, "run: fit");
+                        pdfView.toFitPage();
+                        handleFit = true;
+                    }
+                }
+            }
+        }, 100);
     }
 
     @Override
@@ -195,6 +225,33 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
         if (!pdfView.isSwipeEnabled()) {
+            return false;
+        }
+        if (!pdfView.isSwipeVertical() && pdfView.getZoom() == 1 && !handleFit) {
+            Log.d(TAG, "onFling: " + velocityX);
+            float velocity = Math.abs(velocityX);
+            int currentPage = pdfView.getCurrentPage();
+            if (currentPage != touchDownPage){
+                pdfView.toFitPage();
+                handleFit = true;
+                return true;
+            }
+            Log.d(TAG, "onFling: currentPage:"+currentPage);
+            if (velocityX > 0) {
+                // 前一页
+                if (velocity > 2000) {
+                    pdfView.jumpTo(currentPage - 1, true, true);
+                    handleFit = true;
+                    return true;
+                }
+            } else {
+                // 后一页
+                if (velocity > 2000) {
+                    pdfView.jumpTo(currentPage + 1, true, true);
+                    handleFit = true;
+                    return true;
+                }
+            }
             return false;
         }
         if (pdfView.doPageFling()) {
@@ -280,11 +337,16 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
         if (!enabled) {
             return false;
         }
+        if (event.getAction()==MotionEvent.ACTION_DOWN){
+            touchDownPage = pdfView.getCurrentPage();
+            Log.d(TAG, "onTouch: down page:"+ touchDownPage);
+            handleFit = false;
+        }
 
         boolean retVal = scaleGestureDetector.onTouchEvent(event);
         retVal = gestureDetector.onTouchEvent(event) || retVal;
 
-        if (event.getAction() == MotionEvent.ACTION_UP) {
+        if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
             if (scrolling) {
                 scrolling = false;
                 onScrollEnd(event);
