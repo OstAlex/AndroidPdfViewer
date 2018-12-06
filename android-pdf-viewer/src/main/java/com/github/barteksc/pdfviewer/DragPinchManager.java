@@ -70,6 +70,7 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
 
     @Override
     public boolean onSingleTapConfirmed(MotionEvent e) {
+        Log.d(TAG, "onSingleTapConfirmed() called with: e = [" + e + "]");
         boolean linkTapped = checkLinkTapped(e.getX(), e.getY());
         if (!linkTapped && !pdfView.isSwipeVertical() && pdfView.getZoom() == 1){
             float x = e.getX();
@@ -98,6 +99,7 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
     }
 
     private boolean checkLinkTapped(float x, float y) {
+        Log.d(TAG, "checkLinkTapped() called with: x = [" + x + "], y = [" + y + "]");
         PdfFile pdfFile = pdfView.pdfFile;
         float mappedX = -pdfView.getCurrentXOffset() + x;
         float mappedY = -pdfView.getCurrentYOffset() + y;
@@ -124,6 +126,7 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
     }
 
     private void startPageFling(MotionEvent downEvent, MotionEvent ev, float velocityX, float velocityY) {
+        Log.d(TAG, "startPageFling() called with: downEvent = [" + downEvent + "], ev = [" + ev + "], velocityX = [" + velocityX + "], velocityY = [" + velocityY + "]");
         if (!checkDoPageFling(velocityX, velocityY)) {
             return;
         }
@@ -148,6 +151,7 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
 
     @Override
     public boolean onDoubleTap(MotionEvent e) {
+        Log.d(TAG, "onDoubleTap() called with: e = [" + e + "]");
         if (!pdfView.isDoubletapEnabled()) {
             return false;
         }
@@ -198,6 +202,7 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
 
     private boolean handleFit = false;
     private void onScrollEnd(MotionEvent event) {
+        Log.d(TAG, "onScrollEnd() called with: event = [" + event + "]");
         pdfView.loadPages();
         hideHandle();
         if (!animationManager.isFlinging()) {
@@ -219,11 +224,13 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
 
     @Override
     public void onLongPress(MotionEvent e) {
+        Log.d(TAG, "onLongPress() called with: e = [" + e + "]");
         pdfView.callbacks.callOnLongPress(e);
     }
 
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+        Log.d(TAG, "onFling() called with: e1 = [" + e1 + "], e2 = [" + e2 + "], velocityX = [" + velocityX + "], velocityY = [" + velocityY + "]");
         if (!pdfView.isSwipeEnabled()) {
             return false;
         }
@@ -282,6 +289,7 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
     }
 
     private void onBoundedFling(float velocityX, float velocityY) {
+        Log.d(TAG, "onBoundedFling() called with: velocityX = [" + velocityX + "], velocityY = [" + velocityY + "]");
         int xOffset = (int) pdfView.getCurrentXOffset();
         int yOffset = (int) pdfView.getCurrentYOffset();
 
@@ -308,6 +316,7 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
 
     @Override
     public boolean onScale(ScaleGestureDetector detector) {
+        Log.d(TAG, "onScale() called with: detector = [" + detector + "]");
         float dr = detector.getScaleFactor();
         float wantedZoom = pdfView.getZoom() * dr;
         if (wantedZoom < MINIMUM_ZOOM) {
@@ -363,6 +372,7 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
     }
 
     private boolean checkDoPageFling(float velocityX, float velocityY) {
+        Log.d(TAG, "checkDoPageFling() called with: velocityX = [" + velocityX + "], velocityY = [" + velocityY + "]");
         float absX = Math.abs(velocityX);
         float absY = Math.abs(velocityY);
         return pdfView.isSwipeVertical() ? absY > absX : absX > absY;

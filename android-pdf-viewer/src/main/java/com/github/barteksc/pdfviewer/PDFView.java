@@ -903,7 +903,7 @@ public class PDFView extends RelativeLayout {
             } else {
                 if (offsetX > 0) { // left visible
                     offsetX = 0;
-                } else if (offsetX + contentWidth < getWidth()) { // right visible
+                } else if (isSwipeVertical() || (getZoom() > 1 && offsetX + contentWidth < getWidth())) { // right visible
                     offsetX = -contentWidth + getWidth();
                 }
             }
