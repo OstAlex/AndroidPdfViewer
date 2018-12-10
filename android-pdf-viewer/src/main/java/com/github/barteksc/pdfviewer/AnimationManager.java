@@ -117,7 +117,6 @@ class AnimationManager {
 
     void computeFling() {
         boolean computeScrollOffset = scroller.computeScrollOffset();
-        Log.d(TAG, "computeFling() called  flinging:" + flinging+"  computeScrollOffset:+"+computeScrollOffset);
         if (computeScrollOffset) {
             pdfView.moveTo(scroller.getCurrX(), scroller.getCurrY());
             pdfView.loadPageByOffset();

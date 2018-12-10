@@ -40,6 +40,7 @@ import com.github.barteksc.pdfviewer.link.DefaultLinkHandler;
 import com.github.barteksc.pdfviewer.link.LinkHandler;
 import com.github.barteksc.pdfviewer.listener.Callbacks;
 import com.github.barteksc.pdfviewer.listener.OnDrawListener;
+import com.github.barteksc.pdfviewer.listener.OnEndPageOverScrollListener;
 import com.github.barteksc.pdfviewer.listener.OnErrorListener;
 import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
 import com.github.barteksc.pdfviewer.listener.OnLongPressListener;
@@ -101,6 +102,12 @@ public class PDFView extends RelativeLayout {
     private float minZoom = DEFAULT_MIN_SCALE;
     private float midZoom = DEFAULT_MID_SCALE;
     private float maxZoom = DEFAULT_MAX_SCALE;
+    private boolean overScroll = false;
+
+    public void scrollStart() {
+        Log.d(TAG, "scrollStart() called");
+        overScroll = false;
+    }
 
     /**
      * START - scrolling in first page direction
@@ -866,14 +873,21 @@ public class PDFView extends RelativeLayout {
 
             // Check Y offset
             float contentHeight = pdfFile.getDocLen(zoom);
+            float verticalOverScroll = 0;
             if (contentHeight < getHeight()) { // whole document height visible on screen
                 offsetY = (getHeight() - contentHeight) / 2;
             } else {
                 if (offsetY > 0) { // top visible
                     offsetY = 0;
                 } else if (offsetY + contentHeight < getHeight()) { // bottom visible
+                    verticalOverScroll = getHeight() - (offsetY + contentHeight);
                     offsetY = -contentHeight + getHeight();
                 }
+            }
+
+            if (verticalOverScroll > 50 && !overScroll){
+                overScroll = true;
+                callbacks.callOnEndPageOverScroll();
             }
 
             if (offsetY < currentYOffset) {
@@ -905,6 +919,13 @@ public class PDFView extends RelativeLayout {
                     offsetX = 0;
                 } else if (isSwipeVertical() || (getZoom() > 1 && offsetX + contentWidth < getWidth())) { // right visible
                     offsetX = -contentWidth + getWidth();
+                }
+
+                Log.d(TAG, "moveTo: overScroll:"+overScroll);
+                if (offsetX + contentWidth < getWidth() * 0.75f && !overScroll){
+                    overScroll = true;
+                    Log.e(TAG, "moveTo: OverScroll Callback ...... ");
+                    callbacks.callOnEndPageOverScroll();
                 }
             }
 
@@ -1427,6 +1448,7 @@ public class PDFView extends RelativeLayout {
         private boolean pageSnap = false;
 
         private boolean nightMode = false;
+        private OnEndPageOverScrollListener onEndPageOverScroll;
 
         private Configurator(DocumentSource documentSource) {
             this.documentSource = documentSource;
@@ -1464,6 +1486,11 @@ public class PDFView extends RelativeLayout {
 
         public Configurator onLoad(OnLoadCompleteListener onLoadCompleteListener) {
             this.onLoadCompleteListener = onLoadCompleteListener;
+            return this;
+        }
+
+        public Configurator onEndPageOverScroll(OnEndPageOverScrollListener onEndPageOverScrollListener){
+            this.onEndPageOverScroll = onEndPageOverScrollListener;
             return this;
         }
 
@@ -1579,6 +1606,7 @@ public class PDFView extends RelativeLayout {
             PDFView.this.callbacks.setOnLongPress(onLongPressListener);
             PDFView.this.callbacks.setOnPageError(onPageErrorListener);
             PDFView.this.callbacks.setLinkHandler(linkHandler);
+            PDFView.this.callbacks.setOnEndPageOverScrollListener(onEndPageOverScroll);
             PDFView.this.setSwipeEnabled(enableSwipe);
             PDFView.this.setNightMode(nightMode);
             PDFView.this.enableDoubletap(enableDoubletap);

@@ -31,6 +31,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.github.barteksc.pdfviewer.PDFView;
+import com.github.barteksc.pdfviewer.listener.OnEndPageOverScrollListener;
 import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
 import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
 import com.github.barteksc.pdfviewer.listener.OnPageErrorListener;
@@ -51,7 +52,7 @@ import java.util.List;
 @EActivity(R.layout.activity_main)
 @OptionsMenu(R.menu.options)
 public class PDFViewActivity extends AppCompatActivity implements OnPageChangeListener, OnLoadCompleteListener,
-        OnPageErrorListener {
+        OnPageErrorListener, OnEndPageOverScrollListener {
 
     private static final String TAG = PDFViewActivity.class.getSimpleName();
 
@@ -76,6 +77,7 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
     String pdfFileName;
 
     boolean swipeHorizontal = true;
+    boolean nightMode = true;
     private FitPolicy fitPolicy = FitPolicy.PAGE_FIT_BOTH;
 
     @OptionsItem(R.id.pickFile)
@@ -131,6 +133,8 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
                         .onPageError(PDFViewActivity.this)
                         .swipeHorizontal(swipeHorizontal = !swipeHorizontal)
                         .defaultPage(currentPage)
+                        .onEndPageOverScroll(PDFViewActivity.this)
+                        .nightMode(nightMode = !nightMode)
                         .pageFitPolicy(fitPolicy)
                         .load();
             }
@@ -282,5 +286,11 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
     @Override
     public void onPageError(int page, Throwable t) {
         Log.e(TAG, "Cannot load page " + page);
+    }
+
+    @Override
+    public void onEndPageOverScroll() {
+        Toast.makeText(this,"这是最后一页",Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "onEndPageOverScroll: 这是最后一页");
     }
 }

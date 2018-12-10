@@ -73,6 +73,7 @@ public class Callbacks {
      * Call back object to call when clicking link
      */
     private LinkHandler linkHandler;
+    private OnEndPageOverScrollListener onEndPageOverScrollListener;
 
     public void setOnLoadComplete(OnLoadCompleteListener onLoadCompleteListener) {
         this.onLoadCompleteListener = onLoadCompleteListener;
@@ -102,6 +103,10 @@ public class Callbacks {
             return true;
         }
         return false;
+    }
+
+    public void setOnEndPageOverScrollListener(OnEndPageOverScrollListener onEndPageOverScrollListener){
+        this.onEndPageOverScrollListener = onEndPageOverScrollListener;
     }
 
     public void setOnRender(OnRenderListener onRenderListener) {
@@ -165,6 +170,12 @@ public class Callbacks {
     public void callOnLongPress(MotionEvent event) {
         if (onLongPressListener != null) {
             onLongPressListener.onLongPress(event);
+        }
+    }
+
+    public void callOnEndPageOverScroll(){
+        if (onEndPageOverScrollListener != null){
+            onEndPageOverScrollListener.onEndPageOverScroll();
         }
     }
 

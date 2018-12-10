@@ -347,6 +347,7 @@ class DragPinchManager implements GestureDetector.OnGestureListener, GestureDete
             return false;
         }
         if (event.getAction()==MotionEvent.ACTION_DOWN){
+            pdfView.scrollStart();
             touchDownPage = pdfView.getCurrentPage();
             Log.d(TAG, "onTouch: down page:"+ touchDownPage);
             handleFit = false;
